@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 10px; 
+            font-size: 14px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+        }
+        .section { 
+            margin: 15px 0; 
+            padding: 15px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+        }
+        .ok { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        button { 
+            padding: 8px 15px; 
+            margin: 5px; 
+            border: none;
+            border-radius: 5px;
+            background: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, #fff);
+            cursor: pointer;
+        }
+        .log { 
+            background: #000; 
+            color: #0f0; 
+            padding: 10px; 
+            font-family: monospace; 
+            font-size: 12px;
+            max-height: 200px; 
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Telegram Mini App</h1>
+    
+    <div class="section">
+        <h2>1. Информация о Telegram WebApp</h2>
+        <div id="telegram-info"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Тест API соединения</h2>
+        <button onclick="testAPI()">Проверить API</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Тест загрузки файлов</h2>
+        <input type="file" id="testFile" accept="image/*">
+        <button onclick="testUpload()">Загрузить тестовый файл</button>
+        <div id="upload-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Лог ошибок</h2>
+        <button onclick="clearLog()">Очистить лог</button>
+        <div id="error-log" class="log"></div>
+    </div>
+
+    <script>
+        let logDiv = document.getElementById('error-log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(logEntry);
+        }
+        
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+        
+        // Перехватываем ошибки
+        window.addEventListener('error', (e) => {
+            log(`JS Error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`Unhandled Promise Rejection: ${e.reason}`, 'error');
+        });
+        
+        // Проверяем Telegram WebApp
+        function checkTelegramWebApp() {
+            const infoDiv = document.getElementById('telegram-info');
+            let html = '';
+            
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    
+                    html += `<div class="ok">✅ Telegram WebApp найден</div>`;
+                    html += `<div><strong>Версия:</strong> ${tg.version || 'неизвестна'}</div>`;
+                    html += `<div><strong>Платформа:</strong> ${tg.platform || 'неизвестна'}</div>`;
+                    html += `<div><strong>Цветовая схема:</strong> ${tg.colorScheme || 'неизвестна'}</div>`;
+                    html += `<div><strong>Высота viewport:</strong> ${tg.viewportHeight || 'неизвестна'}</div>`;
+                    html += `<div><strong>Высота viewport (стабильная):</strong> ${tg.viewportStableHeight || 'неизвестна'}</div>`;
+                    
+                    if (tg.initData) {
+                        html += `<div class="ok"><strong>InitData:</strong> получены (${tg.initData.length} символов)</div>`;
+                    } else {
+                        html += `<div class="warning"><strong>InitData:</strong> отсутствуют</div>`;
+                    }
+                    
+                    if (tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0) {
+                        html += `<div><strong>InitDataUnsafe:</strong> ${JSON.stringify(tg.initDataUnsafe, null, 2)}</div>`;
+                    }
+                    
+                    // Проверяем доступные методы
+                    const methods = ['ready', 'expand', 'close', 'sendData', 'showAlert', 'showPopup'];
+                    const availableMethods = methods.filter(method => typeof tg[method] === 'function');
+                    html += `<div><strong>Доступные методы:</strong> ${availableMethods.join(', ')}</div>`;
+                    
+                    // Проверяем кнопки
+                    if (tg.MainButton) {
+                        html += `<div><strong>MainButton:</strong> доступна</div>`;
+                    }
+                    if (tg.BackButton) {
+                        html += `<div><strong>BackButton:</strong> доступна</div>`;
+                    }
+                    
+                    // Инициализируем
+                    try {
+                        tg.ready();
+                        tg.expand();
+                        html += `<div class="ok">✅ WebApp инициализирован</div>`;
+                    } catch (initError) {
+                        html += `<div class="error">❌ Ошибка инициализации: ${initError.message}</div>`;
+                        log(`Telegram WebApp init error: ${initError.message}`, 'error');
+                    }
+                    
+                } else {
+                    html += `<div class="warning">⚠️ Telegram WebApp не найден</div>`;
+                    html += `<div>window.Telegram: ${typeof window.Telegram}</div>`;
+                    html += `<div>User Agent: ${navigator.userAgent}</div>`;
+                }
+                
+            } catch (error) {
+                html += `<div class="error">❌ Ошибка проверки: ${error.message}</div>`;
+                log(`Telegram check error: ${error.message}`, 'error');
+            }
+            
+            infoDiv.innerHTML = html;
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = 'Тестируем...';
+            
+            try {
+                log('Начинаем тест API');
+                
+                // Тест health check
+                const healthResponse = await fetch('/api/health');
+                log(`Health check status: ${healthResponse.status}`);
+                
+                if (healthResponse.ok) {
+                    const healthData = await healthResponse.json();
+                    log(`Health check OK: ${JSON.stringify(healthData)}`);
+                    resultDiv.innerHTML = '<div class="ok">✅ API работает</div>';
+                } else {
+                    throw new Error(`Health check failed: ${healthResponse.status}`);
+                }
+                
+            } catch (error) {
+                log(`API test error: ${error.message}`, 'error');
+                resultDiv.innerHTML = `<div class="error">❌ Ошибка API: ${error.message}</div>`;
+            }
+        }
+        
+        async function testUpload() {
+            const resultDiv = document.getElementById('upload-result');
+            const fileInput = document.getElementById('testFile');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<div class="warning">⚠️ Выберите файл</div>';
+                return;
+            }
+            
+            try {
+                log('Начинаем тест загрузки файла');
+                resultDiv.innerHTML = 'Загружаем...';
+                
+                const formData = new FormData();
+                formData.append('receipt', fileInput.files[0]);
+                
+                const response = await fetch('/api/upload-receipt', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                log(`Upload response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    log(`Upload OK: ${JSON.stringify(result)}`);
+                    resultDiv.innerHTML = '<div class="ok">✅ Загрузка работает</div>';
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+                }
+                
+            } catch (error) {
+                log(`Upload test error: ${error.message}`, 'error');
+                resultDiv.innerHTML = `<div class="error">❌ Ошибка загрузки: ${error.message}</div>`;
+            }
+        }
+        
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Debug страница загружена');
+            checkTelegramWebApp();
+            
+            // Автоматический тест API через 1 секунду
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html>
