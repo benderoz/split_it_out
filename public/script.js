@@ -51,6 +51,36 @@ function initializeApp() {
     setupEventListeners();
     updateColorPanel();
     updateSummary();
+    
+    // Тестируем соединение с API
+    testAPIConnection();
+}
+
+// Функция для тестирования API
+async function testAPIConnection() {
+    try {
+        console.log('Тестируем соединение с API...');
+        
+        // Тест GET запроса
+        const healthResponse = await fetch('/api/health');
+        console.log('Health check:', healthResponse.status, await healthResponse.json());
+        
+        // Тест POST запроса
+        const testResponse = await fetch('/api/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ test: 'data' })
+        });
+        console.log('Test POST:', testResponse.status, await testResponse.json());
+        
+        console.log('✅ API соединение работает');
+        
+    } catch (error) {
+        console.error('❌ Ошибка API соединения:', error);
+        showError('Проблема с соединением с сервером: ' + error.message);
+    }
 }
 
 function setupEventListeners() {
@@ -115,19 +145,28 @@ async function handleFileUpload(event) {
 
 async function analyzeReceipt(file) {
     try {
+        console.log('Начинаем анализ файла:', file.name, file.type, file.size);
+        
         const formData = new FormData();
         formData.append('receipt', file);
+        
+        console.log('Отправляем POST запрос на /api/upload-receipt');
         
         const response = await fetch('/api/upload-receipt', {
             method: 'POST',
             body: formData
         });
         
+        console.log('Получен ответ:', response.status, response.statusText);
+        
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('Ошибка ответа:', errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         }
         
         const result = await response.json();
+        console.log('Результат анализа:', result);
         
         if (!result.success) {
             throw new Error(result.error || 'Ошибка анализа чека');

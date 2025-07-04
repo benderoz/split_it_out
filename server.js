@@ -24,6 +24,14 @@ app.use(limiter);
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Логирование всех запросов
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - ${req.ip}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
 app.use(express.static('public'));
 
 // Создание директории для загрузок
@@ -146,28 +154,54 @@ async function analyzeReceiptWithGemini(imagePath) {
 
 // API маршруты
 
+// Отладочный маршрут для проверки доступности
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    upload_dir: uploadsDir
+  });
+});
+
+// Тестовый маршрут для проверки POST запросов
+app.post('/api/test', (req, res) => {
+  console.log('Test POST запрос получен:', req.headers, req.body);
+  res.json({ message: 'POST запрос работает', received: req.body });
+});
+
 // Загрузка и анализ чека
-app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Файл не был загружен' });
+app.post('/api/upload-receipt', (req, res) => {
+  upload.single('receipt')(req, res, async (err) => {
+    if (err) {
+      console.error('Ошибка multer:', err);
+      return res.status(400).json({ 
+        error: 'Ошибка загрузки файла', 
+        details: err.message 
+      });
     }
 
-    console.log('Анализирую чек:', req.file.filename);
-    const analysis = await analyzeReceiptWithGemini(req.file.path);
-    
-    res.json({
-      success: true,
-      data: analysis,
-      message: 'Чек успешно проанализирован'
-    });
-  } catch (error) {
-    console.error('Ошибка обработки чека:', error);
-    res.status(500).json({ 
-      error: 'Ошибка при анализе чека', 
-      details: error.message 
-    });
-  }
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Файл не был загружен' });
+      }
+
+      console.log('Анализирую чек:', req.file.filename);
+      const analysis = await analyzeReceiptWithGemini(req.file.path);
+      
+      res.json({
+        success: true,
+        data: analysis,
+        message: 'Чек успешно проанализирован'
+      });
+    } catch (error) {
+      console.error('Ошибка обработки чека:', error);
+      res.status(500).json({ 
+        error: 'Ошибка при анализе чека', 
+        details: error.message 
+      });
+    }
+  });
 });
 
 // Основная страница
@@ -176,7 +210,7 @@ app.get('/', (req, res) => {
 });
 
 // Webhook для Telegram бота
-app.post('/webhook', express.json(), (req, res) => {
+app.post('/webhook', (req, res) => {
   console.log('Webhook получен:', req.body);
   
   const { message } = req.body;
