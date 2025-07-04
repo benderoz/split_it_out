@@ -84,8 +84,11 @@ async function testAPIConnection() {
     try {
         console.log('Тестируем соединение с API...');
         
+        // Определяем базовый URL
+        const baseUrl = window.location.origin;
+        
         // Тест GET запроса
-        const healthResponse = await fetch('/api/health');
+        const healthResponse = await fetch(`${baseUrl}/api/health`);
         console.log('Health check status:', healthResponse.status);
         
         if (healthResponse.ok) {
@@ -100,7 +103,7 @@ async function testAPIConnection() {
         }
         
         // Тест POST запроса
-        const testResponse = await fetch('/api/test', {
+        const testResponse = await fetch(`${baseUrl}/api/test`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -213,9 +216,17 @@ async function analyzeReceipt(file) {
         
         console.log('Отправляем POST запрос на /api/upload-receipt');
         
-        const response = await fetch('/api/upload-receipt', {
+        // Определяем базовый URL
+        const baseUrl = window.location.origin;
+        const uploadUrl = `${baseUrl}/api/upload-receipt`;
+        console.log('Полный URL:', uploadUrl);
+        
+        const response = await fetch(uploadUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
         });
         
         console.log('Получен ответ:', response.status, response.statusText);

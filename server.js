@@ -21,14 +21,39 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-app.use(cors());
+
+// Улучшенная CORS конфигурация
+app.use(cors({
+  origin: true, // Разрешаем все origins для разработки
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Обработка OPTIONS запросов (preflight)
+app.options('*', (req, res) => {
+  console.log('🔄 OPTIONS preflight запрос на:', req.url);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(204);
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Логирование всех запросов
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - ${req.ip}`);
-  console.log('Headers:', req.headers);
+  console.log(`\n=== ${new Date().toISOString()} ===`);
+  console.log(`${req.method} ${req.url} from ${req.ip}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Query:', req.query);
+  console.log('Body type:', typeof req.body);
+  console.log('Content-Type:', req.get('Content-Type'));
+  console.log('================================\n');
   next();
 });
 
