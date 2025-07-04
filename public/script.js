@@ -44,7 +44,10 @@ const availableColors = [
 const uploadScreen = document.getElementById('uploadScreen');
 const analysisScreen = document.getElementById('analysisScreen');
 const loadingScreen = document.getElementById('loadingScreen');
-const receiptInput = document.getElementById('receiptInput');
+const receiptInputGallery = document.getElementById('receiptInputGallery');
+const receiptInputCamera = document.getElementById('receiptInputCamera');
+const galleryBtn = document.getElementById('galleryBtn');
+const cameraBtn = document.getElementById('cameraBtn');
 const receiptImage = document.getElementById('receiptImage');
 const receiptOverlay = document.getElementById('receiptOverlay');
 const colorSelectors = document.querySelectorAll('.color-selector');
@@ -148,8 +151,20 @@ async function testAPIConnection() {
 }
 
 function setupEventListeners() {
-    // Загрузка фото
-    receiptInput.addEventListener('change', handleFileUpload);
+    // Загрузка фото из галереи и камеры
+    receiptInputGallery.addEventListener('change', handleFileUpload);
+    receiptInputCamera.addEventListener('change', handleFileUpload);
+    
+    // Кнопки выбора источника фото
+    galleryBtn.addEventListener('click', () => {
+        console.log('Открываем галерею');
+        receiptInputGallery.click();
+    });
+    
+    cameraBtn.addEventListener('click', () => {
+        console.log('Открываем камеру');
+        receiptInputCamera.click();
+    });
     
     // Цветовая панель
     colorSelectors.forEach((selector, index) => {
@@ -160,7 +175,10 @@ function setupEventListeners() {
     addGuestBtn.addEventListener('click', showAddGuestModal);
     backBtn.addEventListener('click', showUploadScreen);
     shareBtn.addEventListener('click', shareResults);
-    addReceiptBtn.addEventListener('click', () => receiptInput.click());
+    addReceiptBtn.addEventListener('click', () => {
+        console.log('Добавить еще фото - открываем галерею');
+        receiptInputGallery.click();
+    });
     
     // Модальное окно
     confirmGuestBtn.addEventListener('click', addNewGuest);
@@ -203,7 +221,9 @@ async function handleFileUpload(event) {
         showError('Ошибка при загрузке файла: ' + error.message);
     } finally {
         showLoading(false);
-        receiptInput.value = ''; // Сбрасываем input для повторного выбора
+        // Сбрасываем оба input для повторного выбора
+        receiptInputGallery.value = '';
+        receiptInputCamera.value = '';
     }
 }
 

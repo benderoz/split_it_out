@@ -20,9 +20,23 @@
             <div class="upload-area">
                 <div class="upload-icon">📸</div>
                 <h2>Загрузите фото чека</h2>
-                <p>Нажмите для выбора фото или сделайте снимок</p>
-                <input type="file" id="receiptInput" accept="image/*" capture="environment">
-                <label for="receiptInput" class="upload-btn">Выбрать фото</label>
+                <p>Выберите фото из галереи или сделайте снимок</p>
+                
+                <!-- Скрытые input элементы -->
+                <input type="file" id="receiptInputGallery" accept="image/*" style="display: none;">
+                <input type="file" id="receiptInputCamera" accept="image/*" capture="environment" style="display: none;">
+                
+                <!-- Кнопки выбора -->
+                <div class="upload-options">
+                    <button class="upload-btn" id="galleryBtn">
+                        <span class="btn-icon">🖼️</span>
+                        <span>Из галереи</span>
+                    </button>
+                    <button class="upload-btn" id="cameraBtn">
+                        <span class="btn-icon">📷</span>
+                        <span>Сделать фото</span>
+                    </button>
+                </div>
             </div>
             
             <div class="receipts-container">
