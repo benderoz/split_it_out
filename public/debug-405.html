@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Диагностика ошибки 405</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #fileInput { margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Диагностика ошибки HTTP 405</h1>
+    
+    <div class="test">
+        <h3>1. Тест здоровья API</h3>
+        <button onclick="testHealth()">Проверить /api/health</button>
+        <div id="healthResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>2. Тест POST без файла</h3>
+        <button onclick="testEmptyPost()">Пустой POST на /api/upload-receipt</button>
+        <div id="emptyPostResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>3. Тест загрузки файла</h3>
+        <input type="file" id="fileInput" accept="image/*">
+        <br>
+        <button onclick="testFileUpload()">Загрузить файл</button>
+        <div id="fileUploadResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>4. Информация о браузере</h3>
+        <div id="browserInfo"></div>
+    </div>
+
+    <script>
+        // Функция для отображения результатов
+        function showResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            container.appendChild(div);
+            console.log(`[${containerId}]`, message);
+        }
+
+        // Перехватываем все fetch запросы для логирования
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            console.log('🌐 Fetch запрос:', args[0], args[1]);
+            return originalFetch.apply(this, args)
+                .then(response => {
+                    console.log('📥 Fetch ответ:', response.status, response.statusText, response.url);
+                    return response;
+                })
+                .catch(error => {
+                    console.error('❌ Fetch ошибка:', error);
+                    throw error;
+                });
+        };
+
+        // Тест 1: Health check
+        async function testHealth() {
+            try {
+                const response = await fetch('/api/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('healthResult', `✅ SUCCESS: ${response.status} - ${JSON.stringify(data)}`, true);
+                } else {
+                    const text = await response.text();
+                    showResult('healthResult', `❌ ERROR: ${response.status} ${response.statusText} - ${text}`, false);
+                }
+            } catch (error) {
+                showResult('healthResult', `❌ EXCEPTION: ${error.message}`, false);
+            }
+        }
+
+        // Тест 2: Пустой POST
+        async function testEmptyPost() {
+            try {
+                const response = await fetch('/api/upload-receipt', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('emptyPostResult', `✅ SUCCESS: ${response.status} - ${JSON.stringify(data)}`, true);
+                } else {
+                    const text = await response.text();
+                    showResult('emptyPostResult', `❌ ERROR: ${response.status} ${response.statusText} - ${text.substring(0, 200)}`, false);
+                }
+            } catch (error) {
+                showResult('emptyPostResult', `❌ EXCEPTION: ${error.message}`, false);
+            }
+        }
+
+        // Тест 3: Загрузка файла
+        async function testFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            
+            if (!fileInput.files[0]) {
+                showResult('fileUploadResult', '❌ Пожалуйста, выберите файл!', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('receipt', fileInput.files[0]);
+
+                showResult('fileUploadResult', `📤 Отправляем файл: ${fileInput.files[0].name} (${fileInput.files[0].size} bytes)`, true);
+
+                const response = await fetch('/api/upload-receipt', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('fileUploadResult', `✅ SUCCESS: ${response.status} - ${JSON.stringify(data)}`, true);
+                } else {
+                    const text = await response.text();
+                    showResult('fileUploadResult', `❌ ERROR: ${response.status} ${response.statusText} - ${text.substring(0, 300)}`, false);
+                }
+            } catch (error) {
+                showResult('fileUploadResult', `❌ EXCEPTION: ${error.message}`, false);
+            }
+        }
+
+        // Информация о браузере
+        function showBrowserInfo() {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'URL': window.location.href,
+                'Origin': window.location.origin,
+                'Protocol': window.location.protocol,
+                'Host': window.location.host,
+                'Port': window.location.port || 'default',
+                'Telegram': !!window.Telegram,
+                'Telegram WebApp': !!window.Telegram?.WebApp
+            };
+
+            let html = '<pre>';
+            for (const [key, value] of Object.entries(info)) {
+                html += `${key}: ${value}\n`;
+            }
+            html += '</pre>';
+
+            document.getElementById('browserInfo').innerHTML = html;
+        }
+
+        // Запускаем при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            showBrowserInfo();
+            
+            // Автоматически тестируем health
+            setTimeout(testHealth, 1000);
+        });
+
+        // Логируем все ошибки
+        window.addEventListener('error', (e) => {
+            console.error('🚨 Глобальная ошибка:', e.error);
+        });
+    </script>
+</body>
+</html>
