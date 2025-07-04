@@ -107,3 +107,11 @@ ssl/
 
 # Nginx config (optional)
 nginx.conf
+
+# Jekyll (GitHub Pages)
+_site/
+.sass-cache/
+.jekyll-metadata
+.jekyll-cache/
+docs/_site/
+Gemfile.lock
