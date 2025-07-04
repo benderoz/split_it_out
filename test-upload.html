@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест загрузки файлов</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px; }
+        .result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .error { background: #ffe6e6; color: red; }
+        .success { background: #e6ffe6; color: green; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест API загрузки файлов</h1>
+    
+    <div class="test-section">
+        <h2>1. Тест Health Check</h2>
+        <button onclick="testHealth()">Проверить /api/health</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Тест POST запроса</h2>
+        <button onclick="testPost()">Проверить /api/test</button>
+        <div id="post-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Тест загрузки файла</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="testUpload()">Загрузить файл</button>
+        <div id="upload-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Лог запросов</h2>
+        <button onclick="clearLog()">Очистить лог</button>
+        <div id="log" style="max-height: 300px; overflow-y: auto; background: #000; color: #0f0; padding: 10px; font-family: monospace;"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toISOString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            log('Тестируем /api/health...');
+            
+            try {
+                const response = await fetch('/api/health');
+                log(`Health response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Health response data: ${JSON.stringify(data)}`);
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Успех: ${JSON.stringify(data)}`;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`Health error: ${error.message}`);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка: ${error.message}`;
+            }
+        }
+
+        async function testPost() {
+            const resultDiv = document.getElementById('post-result');
+            log('Тестируем POST /api/test...');
+            
+            try {
+                const response = await fetch('/api/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ test: 'browser data' })
+                });
+                
+                log(`POST response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`POST response data: ${JSON.stringify(data)}`);
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Успех: ${JSON.stringify(data)}`;
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+            } catch (error) {
+                log(`POST error: ${error.message}`);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка: ${error.message}`;
+            }
+        }
+
+        async function testUpload() {
+            const resultDiv = document.getElementById('upload-result');
+            const fileInput = document.getElementById('fileInput');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Выберите файл';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            log(`Тестируем загрузку файла: ${file.name}, размер: ${file.size}, тип: ${file.type}`);
+            
+            try {
+                const formData = new FormData();
+                formData.append('receipt', file);
+                
+                log('Отправляем POST запрос на /api/upload-receipt...');
+                
+                const response = await fetch('/api/upload-receipt', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                log(`Upload response status: ${response.status} ${response.statusText}`);
+                log(`Upload response headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Upload response data: ${JSON.stringify(data)}`);
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Успех: ${JSON.stringify(data)}`;
+                } else {
+                    const errorText = await response.text();
+                    log(`Upload error response: ${errorText}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+            } catch (error) {
+                log(`Upload error: ${error.message}`);
+                log(`Upload error stack: ${error.stack}`);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка: ${error.message}`;
+            }
+        }
+
+        // Автоматический тест при загрузке страницы
+        window.addEventListener('load', () => {
+            log('Страница загружена, начинаем автотесты...');
+            setTimeout(testHealth, 1000);
+            setTimeout(testPost, 2000);
+        });
+    </script>
+</body>
+</html>
