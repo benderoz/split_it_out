@@ -3,7 +3,6 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Список американских прокси-серверов (можно использовать платные сервисы)
 const US_PROXIES = [
-    { host: '20.127.185.209', port: '8080'},
     // Можно добавить здесь настоящие прокси, например от proxy-cheap.com, bright data, etc.
     // Формат: { host: 'proxy-host', port: 'port', auth: 'username:password' }
 ];
