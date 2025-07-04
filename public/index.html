@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разделение счета</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Заголовок приложения -->
+        <header class="header">
+            <h1>💳 Разделение счета</h1>
+            <p>Сфотографируйте чек и выберите свои позиции</p>
+        </header>
+
+        <!-- Экран загрузки фото -->
+        <div class="screen" id="uploadScreen">
+            <div class="upload-area">
+                <div class="upload-icon">📸</div>
+                <h2>Загрузите фото чека</h2>
+                <p>Нажмите для выбора фото или сделайте снимок</p>
+                <input type="file" id="receiptInput" accept="image/*" capture="environment">
+                <label for="receiptInput" class="upload-btn">Выбрать фото</label>
+            </div>
+            
+            <div class="receipts-container">
+                <div class="receipts-list" id="receiptsList">
+                    <!-- Список загруженных чеков будет здесь -->
+                </div>
+                <button class="add-receipt-btn" id="addReceiptBtn" style="display: none;">
+                    <span>➕</span>
+                    <span>Добавить еще фото</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Экран с анализом чека -->
+        <div class="screen" id="analysisScreen" style="display: none;">
+            <!-- Панель управления цветами -->
+            <div class="color-panel">
+                <div class="colors-container">
+                    <div class="color-selector active" data-color="#ff6b6b" style="background-color: #ff6b6b;"></div>
+                    <div class="color-selector" data-color="#4ecdc4" style="background-color: #4ecdc4;"></div>
+                    <div class="color-selector" data-color="#45b7d1" style="background-color: #45b7d1;"></div>
+                </div>
+                <button class="add-guest-btn" id="addGuestBtn">➕</button>
+            </div>
+
+            <!-- Контейнер с фото чека -->
+            <div class="receipt-container">
+                <div class="receipt-image-wrapper">
+                    <img id="receiptImage" src="" alt="Чек">
+                    <div class="receipt-overlay" id="receiptOverlay">
+                        <!-- Интерактивные элементы будут добавлены через JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Панель с итогами -->
+            <div class="summary-panel">
+                <h3>Итоги:</h3>
+                <div class="summary-list" id="summaryList">
+                    <!-- Итоги по участникам -->
+                </div>
+                <div class="total-amount">
+                    <strong>Общая сумма: <span id="totalAmount">0</span> ₽</strong>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="backBtn">⬅️ Назад</button>
+                <button class="btn btn-primary" id="shareBtn">📤 Поделиться</button>
+            </div>
+        </div>
+
+        <!-- Экран загрузки -->
+        <div class="loading-screen" id="loadingScreen" style="display: none;">
+            <div class="spinner"></div>
+            <p>Анализируем чек...</p>
+        </div>
+
+        <!-- Модальное окно для ввода имени гостя -->
+        <div class="modal" id="guestModal" style="display: none;">
+            <div class="modal-content">
+                <h3>Добавить участника</h3>
+                <input type="text" id="guestNameInput" placeholder="Имя участника" maxlength="20">
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" id="cancelGuestBtn">Отмена</button>
+                    <button class="btn btn-primary" id="confirmGuestBtn">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
