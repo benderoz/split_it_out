@@ -36,8 +36,8 @@ npm install
 ### 3. Настройка переменных окружения
 Отредактируйте файл `.env`:
 ```env
-TELEGRAM_BOT_TOKEN=7601237350:AAE_Gj-ZFcQIFzfc5HoHve29_IDmhOE1n0Q
-GEMINI_API_KEY=AIzaSyC_x1YmkzV7cxFZp0zG6UgAmlKER-v8FFg
+TELEGRAM_BOT_TOKEN=your_token
+GEMINI_API_KEY=your_token
 PORT=3000
 NODE_ENV=production
 WEBHOOK_URL=https://yourdomain.com
